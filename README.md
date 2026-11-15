@@ -78,12 +78,15 @@ Pendiente de subir.
 
 ## Ejercicio 3 · Control de concurrencia y tormentas de reintentos
 
+## Ejercicio 3 · Backoff exponencial con Jitter vs. Thundering Herd (AgroSugar & MetroMIO)
+
 Simulación y análisis de mitigación del fenómeno **Thundering Herd** provocado por **10.000 sensores de AgroSugar** que reintentan comunicarse con un API Gateway tras una caída, frente a una capacidad máxima de **2.000 TPS**.
 
 Se evalúan tres estrategias de reintento:
-- **Sin jitter:** Todos los sensores reintentan de forma sincronizada ($t = 2.0\text{ s}$), generando un pico de 10.000 peticiones en 1 ms que satura completamente el Gateway.
-- **Jitter fijo ($U(0; 0.5\text{ s})$):** Reduce la sincronización exacta pero concentra el tráfico en una ventana estrecha ($20.000\text{ TPS}$ de tasa media), manteniendo saturado el Gateway.
-- **Full Jitter ($U(0; \min(T_{\max}, T_{\text{base}} \cdot 2^i))$):** Distribuye uniformemente las llegadas en toda la ventana exponencial. A partir del reintento 3 (ventana de 8 s), la tasa desciende por debajo de 2.000 TPS, permitiendo que el Gateway absorba la carga sin colapsar.
+
+- **Sin jitter:** Todos los sensores reintentan al mismo tiempo (a los 2 segundos exactos), generando un pico de 10.000 peticiones en 1 ms que satura completamente el Gateway.
+- **Jitter fijo (aleatorio entre 0 y 0.5 s):** Reduce la sincronización exacta pero concentra el tráfico en una ventana muy corta (20.000 TPS de tasa media), manteniendo saturado el Gateway.
+- **Full Jitter (aleatorio en toda la ventana exponencial):** Distribuye uniformemente las llegadas en toda la ventana de tiempo. A partir del reintento 3 (ventana de 8 segundos), la tasa desciende por debajo de 2.000 TPS, permitiendo que el Gateway absorba la carga sin colapsar.
 
 Además, se modela la convivencia con la telemetría de **MetroMIO** (500 buses cada 10 s = 50 TPS) mediante un **Token Bucket** de 1.500 TPS para AgroSugar, garantizando 500 TPS libres para MetroMIO.
 
@@ -114,8 +117,8 @@ python3 backoff_jitter.py
 
 El script genera en consola el análisis de carga y saturación del Gateway:
 
-- **Sin jitter (reintento 1):** Pico de 10.000 peticiones/ms $\rightarrow$ Gateway: **SATURADO**.
-- **Jitter fijo $U(0; 0.5\text{ s})$ (reintento 1):** Pico de ~40 peticiones/ms $\rightarrow$ Gateway: **SATURADO**.
-- **Full Jitter (reintento 3, ventana 8 s):** Carga máxima de ~1.350 TPS $\rightarrow$ Gateway: **OK**.
+- **Sin jitter (reintento 1):** Pico de 10.000 peticiones en 1 ms -> Gateway: **SATURADO**.
+- **Jitter fijo entre 0 y 0.5 s (reintento 1):** Pico de ~40 peticiones en 1 ms -> Gateway: **SATURADO**.
+- **Full Jitter (reintento 3, ventana 8 s):** Carga máxima de ~1.350 TPS -> Gateway: **OK**.
 
-Al ejecutarse, genera la gráfica comparativa [`grafica_backoff.png`](file:///c:/Users/Acer/Desktop/Ejercicio3/grafica_backoff.png) en la misma carpeta.
+Al ejecutarse, genera la gráfica comparativa `grafica_backoff.png` en la misma carpeta.
