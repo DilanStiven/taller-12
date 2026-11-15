@@ -78,8 +78,6 @@ Pendiente de subir.
 
 ## Ejercicio 3 · Control de concurrencia y tormentas de reintentos
 
-## Ejercicio 3 · Backoff exponencial con Jitter vs. Thundering Herd (AgroSugar & MetroMIO)
-
 Simulación y análisis de mitigación del fenómeno **Thundering Herd** provocado por **10.000 sensores de AgroSugar** que reintentan comunicarse con un API Gateway tras una caída, frente a una capacidad máxima de **2.000 TPS**.
 
 Se evalúan tres estrategias de reintento:
