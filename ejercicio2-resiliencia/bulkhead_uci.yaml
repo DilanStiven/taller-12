@@ -1,0 +1,75 @@
+# bulkhead_uci.yaml
+# Bulkhead por recursos en un nodo Edge de 8 vCPU.
+# 1) PriorityClass para las alertas críticas
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: uci-critica
+value: 1000000                      # Prioridad máxima frente a los demás pods
+globalDefault: false
+description: "Alertas críticas de la UCI: nunca se desalojan antes que otros"
+---
+# 2) Alertas UCI: QoS Guaranteed (requests = limits) -> cpu.max "200000 100000"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertas-uci
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: alertas-uci }
+  template:
+    metadata:
+      labels: { app: alertas-uci }
+    spec:
+      priorityClassName: uci-critica
+      containers:
+        - name: alertas-uci
+          image: python:3.11-slim
+          command: ["sleep", "infinity"]      # Contenedor de ejemplo
+          resources:
+            requests: { cpu: "2", memory: "1Gi" }
+            limits:   { cpu: "2", memory: "1Gi" }   # 2,0 vCPU garantizadas
+---
+# 3) Telemetría regular: máximo 1,5 vCPU -> cpu.max "150000 100000"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetria-regular
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: telemetria-regular }
+  template:
+    metadata:
+      labels: { app: telemetria-regular }
+    spec:
+      containers:
+        - name: telemetria-regular
+          image: python:3.11-slim
+          command: ["sleep", "infinity"]
+          resources:
+            requests: { cpu: "500m", memory: "512Mi" }
+            limits:   { cpu: "1500m", memory: "1Gi" }
+---
+# 4) Cliente IA en la nube: máximo 1,0 vCPU -> cpu.max "100000 100000"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cliente-ia-nube
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: cliente-ia-nube }
+  template:
+    metadata:
+      labels: { app: cliente-ia-nube }
+    spec:
+      containers:
+        - name: cliente-ia-nube
+          image: python:3.11-slim
+          command: ["sleep", "infinity"]
+          resources:
+            requests: { cpu: "250m", memory: "256Mi" }
+            limits:   { cpu: "1", memory: "512Mi" }
+
